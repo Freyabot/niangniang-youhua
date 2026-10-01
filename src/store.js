@@ -1,5 +1,5 @@
-import { playableRoles, playableScenes, professions } from './game-data.js';
-import { quotes } from './content.js';
+import { playableRoles, playableScenes, professions } from './game-data.js?v=1.23';
+import { quotes } from './content.js?v=1.23';
 
 const KEY = 'niangniang-youhua-v1';
 const VERSION = 1;

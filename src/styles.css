@@ -51,3 +51,4 @@
 @keyframes stampAppear{0%{opacity:0;transform:scale(1.7) rotate(-9deg)}100%{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.scene-actor .actor-result,.scene-hand.arriving,.scene-actor.reacting .actor-idle,.scene-hand.departing{animation-delay:0ms!important}}
 
+.image-host{position:relative}.image-status{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);min-width:180px;padding:10px;border:1px solid #b8914f;background:#f5e9ce;color:#533322;font-size:13px}.image-status:disabled{cursor:wait}.scene-viewport.preparing:after{content:"动作画面加载中…";position:absolute;z-index:48;left:50%;top:40%;transform:translateX(-50%);background:#f5e9ce;color:#533322;padding:12px 20px;border:2px solid #b8914f;pointer-events:none}

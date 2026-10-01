@@ -1,10 +1,10 @@
-import { getState, updateState } from './store.js';
+import { getState, updateState } from './store.js?v=1.23';
 
 const bgm = {
   menu: new Audio('./assets/music/bgm/start-end.mp3'),
   scene: new Audio('./assets/music/bgm/scene.mp3'),
 };
-Object.values(bgm).forEach(a => { a.loop = true; a.preload = 'auto'; a.volume = 0; });
+Object.values(bgm).forEach(a => { a.loop = true; a.preload = 'none'; a.volume = 0; });
 const sounds = new Map();
 let current = 'menu';
 let transition = 0;

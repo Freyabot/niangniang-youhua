@@ -1,7 +1,8 @@
-import { scenes, roles, openings, monologues, quotes, sceneHotspots, ui } from './content.js';
-import { actors, foregroundActors, hotspots, imageSize, propArt, roleStateArt, sceneArt, sceneOccluders } from './game-data.js';
-import { getState, updateState, quoteId, collect, hasQuote } from './store.js';
-import { playSound, setDucked, setMusicContext, stopEffect } from './audio.js';
+import { scenes, roles, openings, monologues, quotes, sceneHotspots, ui } from './content.js?v=1.23';
+import { actors, foregroundActors, hotspots, imageSize, propArt, roleStateArt, sceneArt, sceneOccluders } from './game-data.js?v=1.23';
+import { getState, updateState, quoteId, collect, hasQuote } from './store.js?v=1.23';
+import { playSound, setDucked, setMusicContext, stopEffect } from './audio.js?v=1.23';
+import { loadImages } from './assets.js?v=1.23';
 
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -9,7 +10,7 @@ const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 export async function mountScene(host, { onBack, onLibrary, onCase, onSwitchRole, onToast, skipIntro = false }) {
   const state = getState(), scene = state.scene, profession = state.profession;
   if (!scene || !profession || !state.role) return onBack();
-  let role = state.role, alive = true, dialogue = null, acting = null, introBusy = true, introAdvance = null;
+  let role = state.role, alive = true, dialogue = null, acting = null, introBusy = true, introAdvance = null, preparing = false;
   let zoom = 1, pan = 0, pointerStart = null, pinch = null, hintQueue = [], lastHint = null;
   let foundVisual = null, visualPending = null, pendingWasFound = false, completion = false, visitMonologues = new Set();
   const art = sceneArt[scene];
@@ -132,6 +133,22 @@ export async function mountScene(host, { onBack, onLibrary, onCase, onSwitchRole
     completeEl.hidden = false;
   }
   async function trigger(h) {
+    if (preparing || introBusy || !currentHotspots().includes(h) || acting?.hotspot === h) return;
+    preparing = true;
+    const requestedRole = role;
+    viewport.classList.add('preparing');
+    try {
+      const people = [...Object.entries(actors[scene]).map(([id, a]) => ({ id, ...a })), ...foregroundActors(scene, role)];
+      await loadImages([
+        ...people.map(a => roleStateArt(a.id, actorState(a, h))),
+        ...['idle', 'action-01', 'action-02', 'found'].map(value => propArt(scene, h, value)),
+        `./generated/characters/${role}-bust.webp`,
+      ]);
+    } catch {
+      if (alive) onToast('动作画面未加载，请再次点击线索重试。');
+      return;
+    } finally { preparing = false; viewport.classList.remove('preparing'); }
+    if (!alive || requestedRole !== role) return;
     if (introBusy || !currentHotspots().includes(h)) return;
     if (acting?.hotspot === h) return;
     if (acting) { acting.timers.forEach(clearTimeout); acting = null; stopEffect(); }
@@ -285,8 +302,17 @@ export async function mountScene(host, { onBack, onLibrary, onCase, onSwitchRole
   if (skipIntro) { introBusy = false; setMusicContext('scene'); updateProgress(); }
   else runIntro();
   return {
-    switchRole(next) {
-      if (!alive || next === role) return;
+    async switchRole(next) {
+      if (!alive || next === role || preparing) return;
+      preparing = true; viewport.classList.add('preparing');
+      try {
+        await loadImages([
+          ...foregroundActors(scene, next).map(a => roleStateArt(a.id, 'idle')),
+          ...[...sceneHotspots[scene].shared, sceneHotspots[scene].exclusive[next]].map(h => propArt(scene, h, hasQuote(quoteId(profession, scene, next, h)) ? 'found' : 'idle')),
+        ]);
+      } catch { if (alive) onToast('人物画面未加载，请重新选择重试。'); return; }
+      finally { preparing = false; viewport.classList.remove('preparing'); }
+      if (!alive) return;
       if (acting) { acting.timers.forEach(clearTimeout); acting = null; }
       stopEffect(); dialogue = null; foundVisual = null; visualPending = null; dialogueEl.hidden = true; completeEl.hidden = true; shade.classList.remove('visible');
       role = next; updateState({ role: next, lastRole: next });

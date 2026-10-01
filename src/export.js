@@ -1,13 +1,7 @@
-import { quotes, roles, scenes, ui } from './content.js';
-import { sceneArt, hotspots, propArt, bustArt, sceneOccluders } from './game-data.js';
+import { quotes, roles, scenes, ui } from './content.js?v=1.23';
+import { sceneArt, hotspots, propArt, bustArt, sceneOccluders } from './game-data.js?v=1.23';
+import { loadImage } from './assets.js?v=1.23';
 
-const imageCache = new Map();
-function loadImage(url) {
-  if (!imageCache.has(url)) imageCache.set(url, new Promise((resolve, reject) => {
-    const image = new Image(); image.onload = () => resolve(image); image.onerror = reject; image.src = url;
-  }));
-  return imageCache.get(url);
-}
 function wrap(ctx, value, maxWidth) {
   const lines = []; let line = '';
   for (const char of value) {

@@ -1,13 +1,15 @@
-import { ui, roles, scenes, causes, quotes, previews, sceneHotspots } from './content.js';
-import { professions, playableRoles, roleOrder, sceneOrder, sceneArt, entryArt, roleArt, roleStateArt, doorArt, propArt, actors, foregroundActors } from './game-data.js';
-import { getState, updateState, hasQuote, clearCollection, quoteId, isTemporary } from './store.js';
-import { unlockAudio, playSound, setMusicContext, toggleMute } from './audio.js';
-import { mountScene } from './scene.js';
-import { makeQuoteImage } from './export.js';
+import { ui, roles, scenes, causes, quotes, previews, sceneHotspots } from './content.js?v=1.23';
+import { professions, playableRoles, roleOrder, sceneOrder, sceneArt, entryArt, roleArt, roleStateArt, doorArt, propArt, actors, foregroundActors } from './game-data.js?v=1.23';
+import { getState, updateState, hasQuote, clearCollection, quoteId, isTemporary } from './store.js?v=1.23';
+import { unlockAudio, playSound, setMusicContext, toggleMute } from './audio.js?v=1.23';
+import { mountScene } from './scene.js?v=1.23';
+import { makeQuoteImage } from './export.js?v=1.23';
+import { loadImages, watchImage } from './assets.js?v=1.23';
 
 const app = document.querySelector('#app');
 let sceneHandle = null, exportController = null, exportResult = null, libraryRole = null, libraryScroll = 0, previewRole = null;
 let toastTimer = null;
+let renderVersion = 0;
 const $ = (s, root = app) => root.querySelector(s);
 const profName = id => professions.find(x => x.id === id)?.name || '';
 const pathLabel = () => {
@@ -71,7 +73,26 @@ function renderEntry() {
   </main>`;
   $('.sound-button').onclick = toggleSound;
   $('.entry-library')?.addEventListener('click', () => { buttonSound(); openLibrary(); });
+  const version = renderVersion, enter = $('.entry-enter');
+  async function prepareEntry() {
+    enter.disabled = true;
+    try {
+      await loadImages([entryArt.background, ...['left', 'right', 'frame'].map(part => doorArt(entryArt.door, part))], (done, total) => { enter.textContent = `画面加载 ${done}/${total}`; });
+      if (version !== renderVersion) return;
+      await Promise.all([...app.querySelectorAll('.entry-doors img')].map(async image => {
+        if (!image.naturalWidth) { image.src = image.getAttribute('src'); await image.decode(); }
+      }));
+      if (version !== renderVersion) return;
+      enter.textContent = ui['ui.entry.enter']; enter.disabled = false; enter.dataset.ready = 'true';
+    } catch {
+      if (version !== renderVersion) return;
+      enter.textContent = '图片未加载 · 重试'; enter.disabled = false;
+    }
+  }
+  prepareEntry();
   $('.entry-enter').onclick = async () => {
+    if (!enter.dataset.ready) return prepareEntry();
+    enter.disabled = true;
     playSound('palace-door-open'); $('.entry-page').classList.add('opening');
     await new Promise(r => setTimeout(r, matchMedia('(prefers-reduced-motion: reduce)').matches ? 80 : 800));
     navigate('profession');
@@ -111,6 +132,7 @@ function renderRoles() {
     stage.innerHTML = `<div class="role-stage-character ${r.playable ? '' : 'locked'}"><img src="${roleArt(id)}" alt="${r.name}" draggable="false"/></div>
       <div class="role-stage-copy"><span class="role-rank">${r.rank} · ${r.residence}</span><strong>${r.name}</strong><span>${r.selfReference} · ${r.persona}</span><small>${r.playable ? r.suitsYou : '尚未入宫'}</small></div>`;
     stage.dataset.id = id;
+    watchImage(stage.querySelector('img'));
     stage.setAttribute('aria-label', `${r.name}，第 ${index + 1} 位，共 ${roleOrder.length} 位${r.playable ? '' : '，尚未入宫'}`);
     select.textContent = r.playable ? '听她说一句' : '尚未入宫 · 锁';
     select.classList.toggle('locked', !r.playable);
@@ -165,30 +187,30 @@ function renderScenes() {
     buttonSound(); updateState({ scene: id }); enterScene();
   });
 }
-function preload(url) { return new Promise((resolve, reject) => { const img = new Image(); img.onload = resolve; img.onerror = reject; img.src = url; }); }
-async function enterScene() {
+function enterScene() { navigate('scene'); }
+async function renderScene() {
   const s = getState();
   if (!s.profession || !s.role || !scenes[s.scene]?.playable) return navigate('profession');
-  app.innerHTML = `<main class="game-shell loading-page"><div class="loading-sigil">景</div><p>此景正在布置…</p></main>`;
+  const version = renderVersion;
+  app.innerHTML = `<main class="game-shell loading-page"><div class="loading-sigil">景</div><p role="status">此景正在布置…</p><small>首次入殿需要下载画面，请稍候。</small><button class="plain-button loading-back">返回选场景</button></main>`;
+  $('.loading-back').onclick = () => navigate('scenes');
+  const progress = $('.loading-page p');
   try {
     const hs = [...sceneHotspots[s.scene].shared, sceneHotspots[s.scene].exclusive[s.role]];
     const people = new Set([...Object.keys(actors[s.scene]), ...foregroundActors(s.scene, s.role).map(a => a.id)]);
     const resources = [
       sceneArt[s.scene].background,
       ...['left', 'right', 'frame'].map(part => doorArt(sceneArt[s.scene].door, part)),
-      ...[...people].flatMap(id => ['idle', 'pressure', 'action'].map(state => roleStateArt(id, state))),
-      ...hs.flatMap(h => ['idle', 'action-01', 'action-02', 'found'].map(state => propArt(s.scene, h, state))),
+      ...[...people].map(id => roleStateArt(id, 'idle')),
+      ...hs.map(h => propArt(s.scene, h, hasQuote(quoteId(s.profession, s.scene, s.role, h)) ? 'found' : 'idle')),
     ];
-    await Promise.all(resources.map(preload));
+    await loadImages(resources, (done, total) => { progress.textContent = `此景正在布置 ${done} / ${total}`; });
   } catch {
+    if (version !== renderVersion) return;
     app.innerHTML = `<main class="game-shell error-page"><img src="./assets/ui/scene-unready.webp" alt=""/><p>${ui['ui.resource.failed']}</p><button class="primary-button retry">${ui['ui.resource.retry']}</button><button class="plain-button back">${ui['ui.resource.back']}</button></main>`;
-    $('.retry').onclick = enterScene; $('.back').onclick = () => navigate('scenes'); return;
+    $('.retry').onclick = render; $('.back').onclick = () => navigate('scenes'); return;
   }
-  navigate('scene');
-}
-async function renderScene() {
-  const s = getState();
-  if (!s.profession || !s.role || !scenes[s.scene]?.playable) return navigate('profession');
+  if (version !== renderVersion) return;
   app.innerHTML = '<main class="game-shell scene-shell"></main>';
   sceneHandle = await mountScene($('.scene-shell'), {
     onBack: () => { buttonSound(); navigate('scenes'); },
@@ -292,6 +314,7 @@ async function startExport(id) {
   } finally { exportController = null; button.disabled = false; button.textContent = ui['ui.case.export']; }
 }
 function render() {
+  renderVersion++;
   const current = route();
   if (sceneHandle) { sceneHandle.destroy(); sceneHandle = null; }
   if (exportController) { exportController.abort(); exportController = null; }
