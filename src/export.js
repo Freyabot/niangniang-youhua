@@ -1,6 +1,6 @@
-import { quotes, roles, scenes, ui } from './content.js?v=1.23';
-import { sceneArt, hotspots, propArt, bustArt, sceneOccluders } from './game-data.js?v=1.23';
-import { loadImage } from './assets.js?v=1.23';
+import { quotes, roles, scenes, ui } from './content.js?v=1.24';
+import { sceneArt, hotspots, propArt, bustArt, sceneOccluders } from './game-data.js?v=1.24';
+import { loadImage } from './assets.js?v=1.24';
 
 function wrap(ctx, value, maxWidth) {
   const lines = []; let line = '';

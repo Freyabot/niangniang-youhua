@@ -1,15 +1,53 @@
-import { ui, roles, scenes, causes, quotes, previews, sceneHotspots } from './content.js?v=1.23';
-import { professions, playableRoles, roleOrder, sceneOrder, sceneArt, entryArt, roleArt, roleStateArt, doorArt, propArt, actors, foregroundActors } from './game-data.js?v=1.23';
-import { getState, updateState, hasQuote, clearCollection, quoteId, isTemporary } from './store.js?v=1.23';
-import { unlockAudio, playSound, setMusicContext, toggleMute } from './audio.js?v=1.23';
-import { mountScene } from './scene.js?v=1.23';
-import { makeQuoteImage } from './export.js?v=1.23';
-import { loadImages, watchImage } from './assets.js?v=1.23';
+import { ui, roles, scenes, causes, quotes, previews, sceneHotspots } from './content.js?v=1.24';
+import { professions, playableRoles, roleOrder, sceneOrder, sceneArt, entryArt, roleArt, roleStateArt, doorArt, propArt, actors, foregroundActors } from './game-data.js?v=1.24';
+import { getState, updateState, hasQuote, clearCollection, quoteId, isTemporary } from './store.js?v=1.24';
+import { unlockAudio, playSound, setMusicContext, toggleMute } from './audio.js?v=1.24';
+import { mountScene } from './scene.js?v=1.24';
+import { makeQuoteImage } from './export.js?v=1.24';
+import { loadImage, loadImages, watchImage } from './assets.js?v=1.24';
 
 const app = document.querySelector('#app');
 let sceneHandle = null, exportController = null, exportResult = null, libraryRole = null, libraryScroll = 0, previewRole = null;
 let toastTimer = null;
 let renderVersion = 0;
+let bootReady = false, bootPercent = 0;
+const loadingArt = './assets/ui/loading-ensemble.webp';
+
+async function startGame() {
+  const screen = $('.boot-screen'), status = $('#boot-status'), retry = $('#boot-retry');
+  if (!screen) {
+    const fresh = new URL('./', location.href); fresh.searchParams.set('v', '1.24'); fresh.hash = location.hash;
+    location.replace(fresh); return;
+  }
+  if (retry.disabled) return;
+  retry.disabled = true; retry.hidden = true; screen.dataset.state = 'loading';
+  const progress = (value, message) => {
+    bootPercent = Math.max(bootPercent, value);
+    $('#boot-percent').textContent = `${bootPercent}%`;
+    $('.boot-fill').style.width = `${bootPercent}%`;
+    $('.boot-progress').setAttribute('aria-valuenow', bootPercent);
+    status.textContent = message;
+  };
+  progress(0, '正在迎候各位主子…');
+  try {
+    await loadImage(loadingArt);
+    const poster = $('.boot-art');
+    if (!poster.naturalWidth) poster.src = loadingArt;
+    await poster.decode();
+    screen.dataset.art = 'ready'; progress(20, '正在加载宫门画面…');
+    await loadImages([entryArt.background, ...['left', 'right', 'frame'].map(part => doorArt(entryArt.door, part))], (done, total) => progress(Math.round((1 + done) / (1 + total) * 100), '正在加载宫门画面…'));
+    progress(100, '行装已齐，宫门将开');
+    screen.classList.add('leaving');
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) await new Promise(resolve => setTimeout(resolve, 280));
+    bootReady = true;
+    document.addEventListener('pointerdown', unlockAudio, { once: true, capture: true });
+    render();
+    if (isTemporary()) toast(ui['ui.storage.temporary']);
+  } catch {
+    screen.dataset.state = 'error'; status.textContent = '画面未加载，请检查网络后重试。';
+    retry.hidden = false; retry.disabled = false; retry.onclick = startGame;
+  }
+}
 const $ = (s, root = app) => root.querySelector(s);
 const profName = id => professions.find(x => x.id === id)?.name || '';
 const pathLabel = () => {
@@ -73,25 +111,8 @@ function renderEntry() {
   </main>`;
   $('.sound-button').onclick = toggleSound;
   $('.entry-library')?.addEventListener('click', () => { buttonSound(); openLibrary(); });
-  const version = renderVersion, enter = $('.entry-enter');
-  async function prepareEntry() {
-    enter.disabled = true;
-    try {
-      await loadImages([entryArt.background, ...['left', 'right', 'frame'].map(part => doorArt(entryArt.door, part))], (done, total) => { enter.textContent = `画面加载 ${done}/${total}`; });
-      if (version !== renderVersion) return;
-      await Promise.all([...app.querySelectorAll('.entry-doors img')].map(async image => {
-        if (!image.naturalWidth) { image.src = image.getAttribute('src'); await image.decode(); }
-      }));
-      if (version !== renderVersion) return;
-      enter.textContent = ui['ui.entry.enter']; enter.disabled = false; enter.dataset.ready = 'true';
-    } catch {
-      if (version !== renderVersion) return;
-      enter.textContent = '图片未加载 · 重试'; enter.disabled = false;
-    }
-  }
-  prepareEntry();
+  const enter = $('.entry-enter'); enter.dataset.ready = 'true';
   $('.entry-enter').onclick = async () => {
-    if (!enter.dataset.ready) return prepareEntry();
     enter.disabled = true;
     playSound('palace-door-open'); $('.entry-page').classList.add('opening');
     await new Promise(r => setTimeout(r, matchMedia('(prefers-reduced-motion: reduce)').matches ? 80 : 800));
@@ -314,6 +335,7 @@ async function startExport(id) {
   } finally { exportController = null; button.disabled = false; button.textContent = ui['ui.case.export']; }
 }
 function render() {
+  if (!bootReady) return;
   renderVersion++;
   const current = route();
   if (sceneHandle) { sceneHandle.destroy(); sceneHandle = null; }
@@ -328,7 +350,6 @@ function render() {
   else navigate('entry');
 }
 
-document.addEventListener('pointerdown', unlockAudio, { once: true, capture: true });
 window.addEventListener('popstate', () => {
   if (route() === 'scene') history.replaceState({ ...history.state, skipIntro: true }, '');
   render();
@@ -337,5 +358,4 @@ if (!location.hash) history.replaceState({}, '', '#/entry');
 if (route() === 'scene' && performance.getEntriesByType('navigation')[0]?.type === 'reload') {
   history.replaceState({ ...history.state, skipIntro: true }, '');
 }
-render();
-if (isTemporary()) setTimeout(() => toast(ui['ui.storage.temporary']), 500);
+startGame();

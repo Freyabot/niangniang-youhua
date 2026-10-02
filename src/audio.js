@@ -1,4 +1,4 @@
-import { getState, updateState } from './store.js?v=1.23';
+import { getState, updateState } from './store.js?v=1.24';
 
 const bgm = {
   menu: new Audio('./assets/music/bgm/start-end.mp3'),
