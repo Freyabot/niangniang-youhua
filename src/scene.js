@@ -1,8 +1,8 @@
-import { scenes, roles, openings, monologues, quotes, sceneHotspots, ui } from './content.js?v=1.24';
-import { actors, foregroundActors, hotspots, imageSize, propArt, roleStateArt, sceneArt, sceneOccluders } from './game-data.js?v=1.24';
-import { getState, updateState, quoteId, collect, hasQuote } from './store.js?v=1.24';
-import { playSound, setDucked, setMusicContext, stopEffect } from './audio.js?v=1.24';
-import { loadImages } from './assets.js?v=1.24';
+import { scenes, roles, openings, monologues, quotes, sceneHotspots, ui } from './content.js?v=1.25';
+import { actors, foregroundActors, hotspots, imageSize, propArt, roleStateArt, sceneArt, sceneOccluders, bustArt, doorArt } from './game-data.js?v=1.25';
+import { getState, updateState, quoteId, collect, hasQuote } from './store.js?v=1.25';
+import { playSound, setDucked, setMusicContext, stopEffect } from './audio.js?v=1.25';
+import { assetUrl } from './assets.js?v=1.25';
 
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -10,7 +10,7 @@ const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 export async function mountScene(host, { onBack, onLibrary, onCase, onSwitchRole, onToast, skipIntro = false }) {
   const state = getState(), scene = state.scene, profession = state.profession;
   if (!scene || !profession || !state.role) return onBack();
-  let role = state.role, alive = true, dialogue = null, acting = null, introBusy = true, introAdvance = null, preparing = false;
+  let role = state.role, alive = true, dialogue = null, acting = null, introBusy = true, introAdvance = null;
   let zoom = 1, pan = 0, pointerStart = null, pinch = null, hintQueue = [], lastHint = null;
   let foundVisual = null, visualPending = null, pendingWasFound = false, completion = false, visitMonologues = new Set();
   const art = sceneArt[scene];
@@ -24,7 +24,7 @@ export async function mountScene(host, { onBack, onLibrary, onCase, onSwitchRole
       </div>
       <div class="scene-viewport" role="group" aria-label="可左右探索的宫廷场景">
         <div class="scene-world"><img class="scene-background" src="${art.background}" alt="" draggable="false"/><div class="scene-objects"></div></div>
-        <div class="scene-shade"></div><img class="scene-miss" src="./assets/ui/wrong-hotspot.svg" alt="" aria-hidden="true"/>
+        <div class="scene-shade"></div><img class="scene-miss" src="${assetUrl('./assets/ui/wrong-hotspot.svg')}" alt="" aria-hidden="true"/>
         <div class="scene-intro" hidden></div>
         <div class="scene-bottom">
           <div class="scene-tools"><button class="plain-button scene-hint">提灯一照</button><button class="plain-button scene-switch">换位主子</button><button class="plain-button scene-sound" aria-label="声音开关">音</button></div>
@@ -122,7 +122,7 @@ export async function mountScene(host, { onBack, onLibrary, onCase, onSwitchRole
       if (!prop.querySelector('.found-mark')) prop.insertAdjacentHTML('beforeend', '<span class="found-mark">已寻得</span>');
     }
     shade.classList.add('visible'); setDucked(true);
-    dialogueEl.innerHTML = `<span class="dialogue-continue">点击任意空白处继续</span><img src="./generated/characters/${role}-bust.webp" alt=""/><button class="dialogue-paper" type="button" aria-label="翻看案卷"><span class="dialogue-name">${roles[role].name} · ${roles[role].rank}</span><span class="dialogue-text">${q.text}</span><span class="dialogue-link">${ui['ui.dialogue.open_case']}</span></button>`;
+    dialogueEl.innerHTML = `<span class="dialogue-continue">点击任意空白处继续</span><img src="${bustArt(role)}" alt=""/><button class="dialogue-paper" type="button" aria-label="翻看案卷"><span class="dialogue-name">${roles[role].name} · ${roles[role].rank}</span><span class="dialogue-text">${q.text}</span><span class="dialogue-link">${ui['ui.dialogue.open_case']}</span></button>`;
     dialogueEl.hidden = false;
     $('.scene-hint').disabled = true;
   }
@@ -133,22 +133,7 @@ export async function mountScene(host, { onBack, onLibrary, onCase, onSwitchRole
     completeEl.hidden = false;
   }
   async function trigger(h) {
-    if (preparing || introBusy || !currentHotspots().includes(h) || acting?.hotspot === h) return;
-    preparing = true;
-    const requestedRole = role;
-    viewport.classList.add('preparing');
-    try {
-      const people = [...Object.entries(actors[scene]).map(([id, a]) => ({ id, ...a })), ...foregroundActors(scene, role)];
-      await loadImages([
-        ...people.map(a => roleStateArt(a.id, actorState(a, h))),
-        ...['idle', 'action-01', 'action-02', 'found'].map(value => propArt(scene, h, value)),
-        `./generated/characters/${role}-bust.webp`,
-      ]);
-    } catch {
-      if (alive) onToast('动作画面未加载，请再次点击线索重试。');
-      return;
-    } finally { preparing = false; viewport.classList.remove('preparing'); }
-    if (!alive || requestedRole !== role) return;
+    if (introBusy || !currentHotspots().includes(h) || acting?.hotspot === h) return;
     if (introBusy || !currentHotspots().includes(h)) return;
     if (acting?.hotspot === h) return;
     if (acting) { acting.timers.forEach(clearTimeout); acting = null; stopEffect(); }
@@ -239,7 +224,7 @@ export async function mountScene(host, { onBack, onLibrary, onCase, onSwitchRole
   async function runIntro() {
     setMusicContext('scene');
     introBusy = true; updateProgress();
-    intro.innerHTML = `<div class="door-transition"><img class="door-left" src="./generated/doors/${art.door}-left.webp" alt=""/><img class="door-right" src="./generated/doors/${art.door}-right.webp" alt=""/><img class="door-frame" src="./generated/doors/${art.door}-frame.webp" alt=""/></div>`;
+    intro.innerHTML = `<div class="door-transition"><img class="door-left" src="${doorArt(art.door, 'left')}" alt=""/><img class="door-right" src="${doorArt(art.door, 'right')}" alt=""/><img class="door-frame" src="${doorArt(art.door, 'frame')}" alt=""/></div>`;
     intro.hidden = false; playSound('palace-door-open');
     await wait(reduced() ? 80 : 920);
     if (!alive) return;
@@ -303,15 +288,7 @@ export async function mountScene(host, { onBack, onLibrary, onCase, onSwitchRole
   else runIntro();
   return {
     async switchRole(next) {
-      if (!alive || next === role || preparing) return;
-      preparing = true; viewport.classList.add('preparing');
-      try {
-        await loadImages([
-          ...foregroundActors(scene, next).map(a => roleStateArt(a.id, 'idle')),
-          ...[...sceneHotspots[scene].shared, sceneHotspots[scene].exclusive[next]].map(h => propArt(scene, h, hasQuote(quoteId(profession, scene, next, h)) ? 'found' : 'idle')),
-        ]);
-      } catch { if (alive) onToast('人物画面未加载，请重新选择重试。'); return; }
-      finally { preparing = false; viewport.classList.remove('preparing'); }
+      if (!alive || next === role) return;
       if (!alive) return;
       if (acting) { acting.timers.forEach(clearTimeout); acting = null; }
       stopEffect(); dialogue = null; foundVisual = null; visualPending = null; dialogueEl.hidden = true; completeEl.hidden = true; shade.classList.remove('visible');

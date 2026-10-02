@@ -8,17 +8,16 @@
   <style>
     html,body{margin:0;background:#271311}.boot-screen{position:relative;width:100%;max-width:500px;height:100vh;height:100dvh;margin:auto;overflow:hidden;background:#3b1818;color:#ffe8bc;font-family:"Songti SC","SimSun",serif;box-sizing:border-box}.boot-screen *{box-sizing:border-box}.boot-screen:before{content:"";position:absolute;inset:12px;border:2px solid #b68042;outline:1px solid #5f3027;outline-offset:4px;pointer-events:none;z-index:3}.boot-art{position:absolute;inset:0;width:100%;height:calc(100% - 112px);object-fit:contain;image-rendering:pixelated;opacity:0;transition:opacity .32s}.boot-screen[data-art="ready"] .boot-art{opacity:1}.boot-heading{position:absolute;z-index:2;top:5%;left:20px;right:20px;text-align:center;text-shadow:0 2px 0 #5d261c,2px 0 0 #5d261c}.boot-kicker{font-size:11px;letter-spacing:.4em;color:#e5b66e}.boot-heading h1{margin:14px 0 10px;font-size:clamp(32px,9vw,46px);letter-spacing:.15em;font-weight:900;line-height:1.2}.boot-heading p{font-size:12px;letter-spacing:.12em;margin:0;color:#f3d1a0}.boot-footer{position:absolute;z-index:4;bottom:max(28px,env(safe-area-inset-bottom));left:32px;right:32px}.boot-meta{display:flex;align-items:end;gap:12px;justify-content:space-between;margin-bottom:12px;line-height:1.5;font-size:13px}.boot-status{flex:1}.boot-percent{font:700 18px/1.3 Georgia,serif;font-variant-numeric:tabular-nums;min-width:48px;text-align:right}.boot-progress{height:22px;padding:3px;border:2px solid #d6ab66;background:#321510;box-shadow:0 3px 0 #1f100e,inset 0 0 0 1px #683828}.boot-fill{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,#f0cf89 0 10px,#ac733b 10px 13px);box-shadow:inset 0 3px 0 #ffe8b7,inset 0 -3px 0 #c59850;transition:width .24s steps(6,end)}.boot-tip{margin:13px 0 0;text-align:center;font-size:11px;color:#ddb27b;letter-spacing:.16em}.boot-retry{display:block;width:100%;min-height:44px;margin:14px 0 0;border:2px solid #d6ab66;background:#8b3129;color:#ffe8bc;font:700 14px "Songti SC","SimSun",serif;box-shadow:inset 0 0 0 2px #61241f;cursor:pointer}.boot-retry[hidden]{display:none}.boot-retry:focus-visible{outline:3px solid #ffe8bc;outline-offset:3px}.boot-lantern{position:absolute;left:calc(50% - 24px);top:43%;width:48px;height:68px;border:4px solid #d1a25c;background:#a83d2b;box-shadow:inset 0 0 0 4px #f4ca79,inset 0 0 0 8px #c27639;animation:bootLantern 1.6s steps(3,end) infinite}.boot-lantern:before{content:"";position:absolute;width:32px;height:8px;left:4px;top:-12px;background:#d1a25c;box-shadow:0 76px 0 #d1a25c}.boot-lantern:after{content:"";position:absolute;left:17px;top:68px;width:6px;height:32px;background:#b05a35;box-shadow:0 25px 0 2px #d1a25c}.boot-screen[data-art="ready"] .boot-lantern{display:none}.boot-screen[data-state="error"] .boot-art{height:calc(100% - 180px)}.boot-screen.leaving{animation:bootLeave .28s ease-out forwards}.boot-noscript{position:absolute;z-index:5;left:32px;right:32px;bottom:160px;text-align:center;font-size:14px}.boot-screen[data-state="error"] .boot-tip{display:none}@keyframes bootLantern{50%{opacity:.65}}@keyframes bootLeave{to{opacity:0}}@media(max-height:620px){.boot-art{top:28px;height:calc(100% - 140px)}.boot-screen[data-state="error"] .boot-art{height:calc(100% - 208px)}.boot-heading{top:4%}.boot-heading h1{margin:9px 0 6px;font-size:34px}.boot-kicker{font-size:10px}.boot-heading p{font-size:11px}.boot-footer{bottom:24px;left:28px;right:28px}.boot-meta{font-size:12px;margin-bottom:8px}.boot-tip{margin-top:10px}}@media(prefers-reduced-motion:reduce){.boot-lantern,.boot-screen.leaving{animation:none}.boot-art,.boot-fill{transition:none}}
   </style>
-  <link rel="preload" as="image" href="./assets/ui/loading-ensemble.webp" fetchpriority="high" />
-  <link rel="stylesheet" href="./src/styles.css?v=1.24" />
+  <link rel="stylesheet" href="./src/styles.css?v=1.25" />
 </head>
 <body>
   <div id="app">
     <main class="boot-screen" data-state="loading" aria-label="游戏加载">
-      <img class="boot-art" src="./assets/ui/loading-ensemble.webp" alt="甄嬛、华妃、安陵容与皇后的像素宫廷群像" fetchpriority="high" decoding="async" />
+      <img class="boot-art" alt="甄嬛、华妃、安陵容与皇后的像素宫廷群像" fetchpriority="high" decoding="async" />
       <div class="boot-lantern" aria-hidden="true"></div>
       <header class="boot-heading"><span class="boot-kicker">一卷职场宫廷心事</span><h1>娘娘有话</h1><p>职场不便说的，让娘娘来说。</p></header>
       <section class="boot-footer">
-        <div class="boot-meta"><span class="boot-status" id="boot-status" role="status">正在准备入宫画面…</span><strong class="boot-percent" id="boot-percent">0%</strong></div>
+        <div class="boot-meta"><span class="boot-status" id="boot-status" role="status">正在准备游戏全部资源…</span><strong class="boot-percent" id="boot-percent">0%</strong></div>
         <div class="boot-progress" role="progressbar" aria-label="游戏加载进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="boot-fill"></span></div>
         <p class="boot-tip">宫门将开，请稍候</p>
         <button class="boot-retry" id="boot-retry" type="button" hidden onclick="location.reload()">重新加载</button>
@@ -26,6 +25,6 @@
       <noscript><p class="boot-noscript">请启用浏览器的 JavaScript 后重新打开游戏。</p></noscript>
     </main>
   </div>
-  <script type="module" src="./src/main.js?v=1.24" onerror="document.querySelector('.boot-screen').dataset.state='error';document.getElementById('boot-status').textContent='游戏未加载，请检查网络后重试。';document.getElementById('boot-retry').hidden=false;"></script>
+  <script type="module" src="./src/main.js?v=1.25" onerror="document.querySelector('.boot-screen').dataset.state='error';document.getElementById('boot-status').textContent='游戏未加载，请检查网络后重试。';document.getElementById('boot-retry').hidden=false;"></script>
 </body>
 </html>

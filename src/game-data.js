@@ -1,3 +1,4 @@
+import { assetUrl } from './assets.js?v=1.25';
 export const professions = [
   { id: 'product', name: '产品', sigil: '卷', playable: true },
   { id: 'developer', name: '开发', sigil: '工', playable: true },
@@ -24,13 +25,13 @@ export const entryArt = {
   door: 'palace-gate',
 };
 
-export const roleArt = id => id === 'shenmeizhuang' ? './assets/characters/shenmeizhuang.webp' : `./generated/characters/${id}-idle.webp`;
-export const roleStateArt = (id, state = 'idle') => `./generated/characters/${id}-${state}.webp`;
-export const bustArt = id => `./generated/characters/${id}-bust.webp`;
-export const doorArt = (kind, part) => `./generated/doors/${kind}-${part}.webp`;
+export const roleArt = id => assetUrl(id === 'shenmeizhuang' ? './assets/characters/shenmeizhuang.webp' : `./generated/characters/${id}-idle.webp`);
+export const roleStateArt = (id, state = 'idle') => assetUrl(`./generated/characters/${id}-${state}.webp`);
+export const bustArt = id => assetUrl(`./generated/characters/${id}-bust.webp`);
+export const doorArt = (kind, part) => assetUrl(`./generated/doors/${kind}-${part}.webp`);
 export const propArt = (scene, hotspot, state = 'idle') => {
-  if (hotspot === 'empress_rule') return './generated/props/review/empress_rule-slip.webp';
-  if (hotspot === 'new_decree') return './generated/props/review/new_decree-scroll.webp';
+  if (hotspot === 'empress_rule') return assetUrl('./generated/props/review/empress_rule-slip.webp');
+  if (hotspot === 'new_decree') return assetUrl('./generated/props/review/new_decree-scroll.webp');
   const reportSprites = {
     total_ledger: 'total-ledger-scroll-abacus.webp',
     clothing_overspend: 'fabric-bolt.webp',
@@ -39,9 +40,9 @@ export const propArt = (scene, hotspot, state = 'idle') => {
     reward_list: 'reward-tally.webp',
     supplement_note: 'supplement-slip.webp',
   };
-  if (scene === 'report' && reportSprites[hotspot]) return `./generated/props/report/${reportSprites[hotspot]}`;
-  if (['backup_plan', 'compromise_rejected', 'risk_note'].includes(hotspot)) return './generated/props/folded-note.webp';
-  return `./generated/props/${scene}/${hotspot}-${state}.webp`;
+  if (scene === 'report' && reportSprites[hotspot]) return assetUrl(`./generated/props/report/${reportSprites[hotspot]}`);
+  if (['backup_plan', 'compromise_rejected', 'risk_note'].includes(hotspot)) return assetUrl('./generated/props/folded-note.webp');
+  return assetUrl(`./generated/props/${scene}/${hotspot}-${state}.webp`);
 };
 
 // Positions use the original 1448 × 1086 artwork coordinate system.
@@ -119,3 +120,8 @@ export function foregroundActors(scene, current) {
 }
 
 export const imageSize = { width: 1448, height: 1086 };
+
+export function bindPreparedArt() {
+  entryArt.background = assetUrl(entryArt.background);
+  Object.values(sceneArt).forEach(art => { art.background = assetUrl(art.background); });
+}

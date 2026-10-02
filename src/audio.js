@@ -1,4 +1,5 @@
-import { getState, updateState } from './store.js?v=1.24';
+import { assetUrl } from './assets.js?v=1.25';
+import { getState, updateState } from './store.js?v=1.25';
 
 const bgm = {
   menu: new Audio('./assets/music/bgm/start-end.mp3'),
@@ -42,7 +43,7 @@ export function playSound(name, exclusive = true) {
   try {
     if (exclusive && activeEffect) { activeEffect.pause(); activeEffect.currentTime = 0; }
     let sound = sounds.get(name);
-    if (!sound) { sound = new Audio(`./assets/music/audio/${name}.mp3`); sounds.set(name, sound); }
+    if (!sound) { sound = new Audio(assetUrl(`./assets/music/audio/${name}.mp3`)); sounds.set(name, sound); }
     sound.pause(); sound.currentTime = 0; sound.volume = name === 'palace-door-open' ? 0.45 : 0.52;
     activeEffect = sound;
     tryPlay(sound);
@@ -59,4 +60,15 @@ export function toggleMute() {
 
 export function audioStatus() {
   return Object.fromEntries(Object.entries(bgm).map(([key, a]) => [key, { paused: a.paused, volume: a.volume }]));
+}
+
+export function prepareAudio(manifest) {
+  bgm.menu.src = assetUrl('./assets/music/bgm/start-end.mp3');
+  bgm.scene.src = assetUrl('./assets/music/bgm/scene.mp3');
+  manifest.filter(item => item.url.includes('/music/audio/')).forEach(item => {
+    const name = item.url.split('/').pop().replace('.mp3', '');
+    const sound = new Audio(assetUrl(item.url)); sound.preload = 'auto'; sound.load();
+    sounds.set(name, sound);
+  });
+  Object.values(bgm).forEach(sound => { sound.preload = 'auto'; sound.load(); });
 }
