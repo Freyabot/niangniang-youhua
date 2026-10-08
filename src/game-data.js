@@ -1,4 +1,4 @@
-import { assetUrl } from './assets.js?v=1.25';
+import { assetUrl } from './assets.js?v=1.26';
 export const professions = [
   { id: 'product', name: '产品', sigil: '卷', playable: true },
   { id: 'developer', name: '开发', sigil: '工', playable: true },

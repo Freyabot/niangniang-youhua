@@ -1,5 +1,5 @@
-import { assetUrl } from './assets.js?v=1.25';
-import { getState, updateState } from './store.js?v=1.25';
+import { assetUrl } from './assets.js?v=1.26';
+import { getState, updateState } from './store.js?v=1.26';
 
 const bgm = {
   menu: new Audio('./assets/music/bgm/start-end.mp3'),

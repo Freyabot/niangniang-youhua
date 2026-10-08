@@ -1,8 +1,8 @@
-import { scenes, roles, openings, monologues, quotes, sceneHotspots, ui } from './content.js?v=1.25';
-import { actors, foregroundActors, hotspots, imageSize, propArt, roleStateArt, sceneArt, sceneOccluders, bustArt, doorArt } from './game-data.js?v=1.25';
-import { getState, updateState, quoteId, collect, hasQuote } from './store.js?v=1.25';
-import { playSound, setDucked, setMusicContext, stopEffect } from './audio.js?v=1.25';
-import { assetUrl } from './assets.js?v=1.25';
+import { scenes, roles, openings, monologues, quotes, sceneHotspots, ui } from './content.js?v=1.26';
+import { actors, foregroundActors, hotspots, imageSize, propArt, roleStateArt, sceneArt, sceneOccluders, bustArt, doorArt } from './game-data.js?v=1.26';
+import { getState, updateState, quoteId, collect, hasQuote } from './store.js?v=1.26';
+import { playSound, setDucked, setMusicContext, stopEffect } from './audio.js?v=1.26';
+import { assetUrl } from './assets.js?v=1.26';
 
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;

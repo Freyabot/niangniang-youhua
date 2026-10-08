@@ -1,11 +1,11 @@
-import { ui, roles, scenes, causes, quotes, previews, sceneHotspots } from './content.js?v=1.25';
-import { professions, playableRoles, roleOrder, sceneOrder, sceneArt, entryArt, roleArt, bustArt, bindPreparedArt, roleStateArt, doorArt, propArt, actors, foregroundActors } from './game-data.js?v=1.25';
-import { getState, updateState, hasQuote, clearCollection, quoteId, isTemporary } from './store.js?v=1.25';
-import { prepareAudio, unlockAudio, playSound, setMusicContext, toggleMute } from './audio.js?v=1.25';
-import { mountScene } from './scene.js?v=1.25';
-import { makeQuoteImage } from './export.js?v=1.25';
-import { prepareResources, assetUrl, watchImage } from './assets.js?v=1.25';
-import { runtimeAssets } from './runtime-assets.js?v=1.25';
+import { ui, roles, scenes, causes, quotes, previews, sceneHotspots } from './content.js?v=1.26';
+import { professions, playableRoles, roleOrder, sceneOrder, sceneArt, entryArt, roleArt, bustArt, bindPreparedArt, roleStateArt, doorArt, propArt, actors, foregroundActors } from './game-data.js?v=1.26';
+import { getState, updateState, hasQuote, clearCollection, quoteId, isTemporary } from './store.js?v=1.26';
+import { prepareAudio, unlockAudio, playSound, setMusicContext, toggleMute } from './audio.js?v=1.26';
+import { mountScene } from './scene.js?v=1.26';
+import { makeQuoteImage } from './export.js?v=1.26';
+import { prepareResources, assetUrl, watchImage } from './assets.js?v=1.26';
+import { runtimeAssets } from './runtime-assets.js?v=1.26';
 
 const app = document.querySelector('#app');
 let sceneHandle = null, exportController = null, exportResult = null, libraryRole = null, libraryScroll = 0, previewRole = null;
@@ -17,7 +17,7 @@ const loadingArt = './assets/ui/loading-ensemble.webp';
 async function startGame() {
   const screen = $('.boot-screen'), status = $('#boot-status'), retry = $('#boot-retry');
   if (!screen) {
-    const fresh = new URL('./', location.href); fresh.searchParams.set('v', '1.25'); fresh.hash = location.hash;
+    const fresh = new URL('./', location.href); fresh.searchParams.set('v', '1.26'); fresh.hash = location.hash;
     location.replace(fresh); return;
   }
   if (retry.disabled) return;
@@ -38,13 +38,20 @@ async function startGame() {
       if (source.startsWith('blob:') && poster.src !== source) { poster.src = source; screen.dataset.art = 'ready'; }
     });
     bindPreparedArt(); prepareAudio(runtimeAssets);
-    progress(100, '行装已齐，宫门将开');
-    screen.classList.add('leaving');
-    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) await new Promise(resolve => setTimeout(resolve, 280));
-    bootReady = true;
-    document.addEventListener('pointerdown', unlockAudio, { once: true, capture: true });
-    render();
-    if (isTemporary()) toast(ui['ui.storage.temporary']);
+    progress(100, '行装已齐，点击进入');
+    screen.dataset.state = 'ready';
+    const enter = $('#boot-enter');
+    enter.hidden = false; enter.disabled = false;
+    enter.onclick = async () => {
+      if (enter.disabled || bootReady) return;
+      enter.disabled = true;
+      unlockAudio();
+      screen.classList.add('leaving');
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) await new Promise(resolve => setTimeout(resolve, 280));
+      bootReady = true;
+      render();
+      if (isTemporary()) toast(ui['ui.storage.temporary']);
+    };
   } catch {
     screen.dataset.state = 'error'; status.textContent = '画面未加载，请检查网络后重试。';
     retry.hidden = false; retry.disabled = false; retry.onclick = startGame;
